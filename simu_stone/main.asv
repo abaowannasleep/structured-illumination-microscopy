@@ -1,0 +1,148 @@
+%%
+focus = (-0.1: 0.03: 0.98);
+poses = length(focus);
+pshift = 5; 
+imgHeight = 1000;
+imgWidth = 1000;
+T = 31;
+%%
+% load sinusoidal fringes
+fmodps = zeros(imgHeight, imgWidth, poses);
+fmodfr = zeros(imgHeight, imgWidth, poses);
+fmodmr = zeros(imgHeight, imgWidth, poses);
+load('stone_fringes.mat');
+
+for i = 1:length(focus)
+    fmodfr(:, :, i) = fourier_mod(fringes{i,pshift});
+    fmodmr(:, :, i) = moer_mod(fringes{i,pshift}, T);
+    fringeGroup = fringes(i,1:pshift);
+    reshapedFringes = reshape(cat(3, fringeGroup{:}), imgHeight, imgWidth, []);
+    fmodps(:, :, i) = ps_mod(reshapedFringes);
+end
+fzps = gaussFitwithCog(focus, fmodps);
+fzfr = gaussFitwithCog(focus, fmodfr);
+fzmr = gaussFitwithCog(focus, fmodmr);
+%%
+% load and process binary encoded fringes
+bmodps = zeros(imgHeight, imgWidth, poses);
+bmodfr = zeros(imgHeight, imgWidth, poses);
+bmodmr = zeros(imgHeight, imgWidth, poses);
+load('stone_bfringes.mat');
+for i = 1:length(focus)
+    for j = 1: pshift
+        bfringes{i,j} = imgaussfilt(bfringes{i,j}, 3.5);
+    end
+    bmodfr(:, :, i) = fourier_mod(b_fringes{i,pshift});
+    bmodmr(:, :, i) = moer_mod(b_fringes{i,pshift}, T);
+    bfringeGroup = bfringes(i,1:pshift);
+    reshapedFringes = reshape(cat(3, bfringeGroup{:}), imgHeight, imgWidth, []);
+    bmodps(:, :, i) = ps_mod(reshapedFringes);
+end
+bzps = gaussFitwithCog(focus, bmodps);
+bzfr = gaussFitwithCog(focus, bmodfr);
+bzmr = gaussFitwithCog(focus, bmodmr);
+%%
+mask_path = 'mask.bmp';
+mask = double(imread(mask_path));
+mask(mask~=0) = 1;
+%%
+load('stone.mat');
+stoneheight = double(stone);
+fzfr = fzfr .*mask;
+fzmr = fzmr.*mask;
+fzps = fzps.*mask;
+rmse(fzps, stoneheight, mask)
+rmse(fzmr, stoneheight, mask)
+rmse(fzfr, stoneheight, mask)
+
+bzfr = bzfr .*mask;
+bzmr = bzmr.*mask;
+bzps = bzps.*mask;
+rmse(bzps, stoneheight, mask)
+rmse(bzmr, stoneheight, mask)
+rmse(bzfr, stoneheight, mask)
+%%
+figure(1)
+plot(bzfr(510,:), 'b*', LineWidth=1);  
+hold on;
+plot(bzmr(510,:), 'g*', LineWidth=1); 
+hold on;
+plot(bzps(510,:), 'r*', LineWidth=1);
+hold off
+ylim([0.2 0.8]);
+xlim([100,800]);
+xlabel('x/pixel');ylabel('height/mm');
+set(gca, 'FontSize', 16);
+legend('FT ', 'SM', 'phase shift');
+grid off, box on
+%%
+figure(2)
+zmin = 0.2;
+zmax = 0.8;
+tiledlayout(1, 3);
+ax1 = nexttile; mesh(bzps); 
+hold on
+x = 100:900;
+y = 510*ones(size(x));
+plot3(x, y, bzps(510,100:900)+0.01, 'r', LineWidth=2);  
+hold off 
+zlim([zmin zmax]);xlim tight, ylim tight;
+view(-20, 80)
+title('(a)', 'FontName','Times New Roman','FontSize',18)
+xlabel('x/pixel');ylabel('y/pixel');zlabel('height/mm');
+set(gca,'FontSize',18);
+ax2 = nexttile; mesh(bzmr); 
+hold on
+x = 100:900;
+y = 510*ones(size(x));
+plot3(x, y, bzmr(510,100:900)+0.01, 'g', LineWidth=2);  
+hold off 
+zlim([zmin zmax]);xlim tight, ylim tight;
+view(-20, 80)
+title('(b)', 'FontName','Times New Roman','FontSize',18)
+xlabel('x/pixel');ylabel('y/pixel');zlabel('height/mm');
+set(gca,'FontSize',18);
+ax3 = nexttile; mesh(bzfr); 
+hold on
+x = 100:900;
+y = 510*ones(size(x));
+plot3(x, y, bzfr(510,100:900)+0.01, 'b', LineWidth=2);  
+hold off 
+zlim([zmin zmax]);xlim tight, ylim tight;
+view(-20, 80)
+title('(c)', 'FontName','Times New Roman','FontSize',18) 
+xlabel('x/pixel');ylabel('y/pixel');zlabel('height/mm');
+set(gca,'FontSize',18);
+cb = colorbar;
+cb.Label.FontSize = 18;
+caxis(ax1,[zmin zmax])
+caxis(ax2,[zmin zmax])
+caxis(ax3,[zmin zmax])
+%%
+figure(3)
+zmin = 0.2;
+zmax = 0.8;
+tiledlayout(1, 3);
+ax4 = nexttile; mesh(fzps); 
+zlim([zmin zmax]);xlim tight, ylim tight;
+view(-20, 80)
+title('(a)', 'FontName','Times New Roman','FontSize',18)
+xlabel('x/pixel');ylabel('y/pixel');zlabel('height/mm');
+set(gca,'FontSize',18);
+ax5 = nexttile; mesh(fzmr); 
+zlim([zmin zmax]);xlim tight, ylim tight;
+view(-20, 80)
+title('(b)', 'FontName','Times New Roman','FontSize',18)
+xlabel('x/pixel');ylabel('y/pixel');zlabel('height/mm');
+set(gca,'FontSize',18);
+ax6 = nexttile; mesh(fzfr); 
+zlim([zmin zmax]);xlim tight, ylim tight;
+view(-20, 80)
+title('(c)', 'FontName','Times New Roman','FontSize',18)
+xlabel('x/pixel');ylabel('y/pixel');zlabel('height/mm');
+set(gca,'FontSize',18);
+cb = colorbar;
+cb.Label.FontSize = 18;
+caxis(ax4,[zmin zmax])
+caxis(ax5,[zmin zmax])
+caxis(ax6,[zmin zmax])

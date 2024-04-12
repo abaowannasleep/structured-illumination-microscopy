@@ -45,6 +45,10 @@ bzmr = gaussFitwithCog(focus, bmodmr);
 mask_path = 'mask.bmp';
 mask = double(imread(mask_path));
 mask(mask~=0) = 1;
+mask = imbinarize(mask);
+radius = 20; 
+se = strel('disk', radius);
+mask = imerode(mask, se);
 %%
 load('stone.mat');
 stoneheight = double(stone);

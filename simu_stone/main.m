@@ -45,6 +45,12 @@ bzmr = gaussFitwithCog(focus, bmodmr);
 mask_path = 'mask.bmp';
 mask = double(imread(mask_path));
 mask(mask~=0) = 1;
+mask = imbinarize(mask);
+% 创建结构元素
+radius = 20; % 结构元素半径
+se = strel('disk', radius);
+% 进行腐蚀操作
+mask = imerode(mask, se);
 %%
 load('stone.mat');
 stoneheight = double(stone);

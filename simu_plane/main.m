@@ -5,6 +5,7 @@ poses = length(focus);
 pshift = 5; 
 imgHeight = 600;
 imgWidth = 600;
+IoA = [201,800, 201,800];
 
 load('plane_fringes.mat');
 modps = zeros(imgHeight, imgWidth, poses);
@@ -32,7 +33,7 @@ bfringesum = zeros(imgHeight, imgWidth, poses);
 bintensities = zeros(1, poses);
 bmods = zeros(1, poses);
 for i = 1:length(focus)
-    for j = 1: pshift);
+    for j = 1: pshift
         im = bfringes{i, j};
         bfringes{i, j} = imgaussfilt(im(201:800, 201:800), 3.5); 
         bfringesum(:,:, i) = bfringesum(:, :, i) +  bfringes{i, j};
@@ -45,6 +46,11 @@ for i = 1:length(focus)
 end
 fbzps_gauss = gaussFitwithCog(focus, fbmodps);
 %%
+
+fzps_gauss = fzps_gauss(IoA(1):IoA(2), IoA(3):IoA(4));
+bzps_gauss = bzps_gauss(IoA(1):IoA(2), IoA(3):IoA(4));
+var(fzps_gauss, 1, 'all')
+var(bzps_gauss(IoA(1):IoA(2), IoA(3):IoA(4)), 1, 'all')
 var(zps_gauss, 1, 'all')
 var(fbzps_gauss, 1, 'all')
 %%
